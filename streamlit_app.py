@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+from PIL import Image, ImageDraw, ImageFont
+import io
 
 # =====================
 # Configuração da página
@@ -11,69 +13,13 @@ st.set_page_config(page_title="PES 21", page_icon="⚽", layout="wide")
 # =====================
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #0e1117;
-        color: #fafafa;
-        font-family: 'Helvetica', sans-serif;
-    }
-    h1, h2, h3 {
-        color: #00ffcc;
-        text-align: center;
-        font-weight: 700;
-    }
-    div.stButton > button {
-        background-color: #00ffcc;
-        color: black;
-        border-radius: 10px;
-        height: 3em;
-        width: 100%;
-        font-size: 18px;
-        font-weight: bold;
-    }
-    div.stButton > button:hover {
-        background-color: #ff00aa;
-        color: white;
-        transition: 0.3s;
-    }
-    /* Cards grandes */
-    .big-number-card {
-        background: linear-gradient(135deg, #00ffcc, #0077ff);
-        color: white;
-        padding: 20px;
-        border-radius: 20px;
-        text-align: center;
-        font-size: 28px;
-        font-weight: bold;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
-        margin-bottom: 15px;
-    }
-    /* Campo */
-    .campo {
-        width: 100%;
-        aspect-ratio: 2 / 3;
-        background: linear-gradient(#006400, #228B22);
-        border: 4px solid white;
-        border-radius: 15px;
-        position: relative;
-        margin: 20px auto;
-    }
-    .jogador {
-        position: absolute;
-        color: black;
-        border-radius: 50%;
-        padding: 12px;
-        text-align: center;
-        font-size: 12px;
-        font-weight: bold;
-        width: 80px;
-        height: 80px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        white-space: pre-line;
-    }
+    .stApp { background-color: #0e1117; color: #fafafa; font-family: 'Helvetica', sans-serif; }
+    h1, h2, h3 { color: #00ffcc; text-align: center; font-weight: 700; }
+    div.stButton > button { background-color: #00ffcc; color: black; border-radius: 10px; height: 3em; width: 100%; font-size: 18px; font-weight: bold; }
+    div.stButton > button:hover { background-color: #ff00aa; color: white; transition: 0.3s; }
+    .big-number-card { background: linear-gradient(135deg, #00ffcc, #0077ff); color: white; padding: 20px; border-radius: 20px; text-align: center; font-size: 28px; font-weight: bold; box-shadow: 0px 4px 12px rgba(0,0,0,0.4); margin-bottom: 15px; }
+    .campo { width: 100%; aspect-ratio: 2 / 3; background: linear-gradient(#006400, #228B22); border: 4px solid white; border-radius: 15px; position: relative; margin: 20px auto; }
+    .jogador { position: absolute; color: black; border-radius: 50%; padding: 12px; text-align: center; font-size: 12px; font-weight: bold; width: 80px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); white-space: pre-line; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -86,11 +32,10 @@ def load_data():
     return df
 
 df = load_data()
-
 st.title("⚽ PES 2021 Fantasy")
 
 # =====================
-# Filtros (apenas lista)
+# Filtros
 # =====================
 col1, col2 = st.columns(2)
 
@@ -105,15 +50,18 @@ with col2:
         max_value=int(df["preco"].max()),
         value=(int(df["preco"].min()), 20)
     )
-    nome = st.text_input("🔎 Buscar por nome")
+    nome_input = st.text_input("🔎 Buscar por nome (separar múltiplos por vírgula)")
 
 df_filtrado = df.copy()
 if posicoes:
     df_filtrado = df_filtrado[df_filtrado["pos"].isin(posicoes)]
 if ranks:
     df_filtrado = df_filtrado[df_filtrado["rank"].isin(ranks)]
-if nome:
-    df_filtrado = df_filtrado[df_filtrado["Jogador"].str.contains(nome, case=False, na=False)]
+if nome_input:
+    nomes = [n.strip() for n in nome_input.split(",")]
+    mask = df_filtrado["Jogador"].apply(lambda x: any(nome.lower() in x.lower() for nome in nomes))
+    df_filtrado = df_filtrado[mask]
+
 df_filtrado = df_filtrado[(df_filtrado["preco"] >= preco_min) & (df_filtrado["preco"] <= preco_max)]
 df_filtrado = df_filtrado.drop(columns=["vel", "kicking", "destruction", "creation"], errors='ignore')
 
@@ -158,28 +106,34 @@ if not df_time.empty:
         st.error(f"🚨 Custo total ultrapassou o limite de {budget} moedas!")
 
 # =====================
+# Download do time completo
+# =====================
+if not df_time.empty:
+    csv = df_time.to_csv(index=False).encode('utf-8')
+    st.download_button("⬇️ Baixar time completo (titulares + reservas)", data=csv, file_name="time_completo.csv", mime="text/csv")
+
+# =====================
 # Visualização em campo + reservas
 # =====================
 if len(titulares) == 11 and len(reservas) <= 12 and df_time["preco"].sum() <= budget:
     st.subheader("📊 Time em campo")
     col_field, col_bench = st.columns([2, 1])
 
-    # Definir cores por posição
-    cores = {
-        "GK": "#FFA500",  # laranja
-        "CB": "#1E90FF", "LB": "#1E90FF", "RB": "#1E90FF",
-        "CM": "#32CD32", "LM": "#32CD32", "RM": "#32CD32",
-        "LW": "#DC143C", "RW": "#DC143C", "ST": "#DC143C"
-    }
-
+    # --- Campo HTML/CSS ---
     with col_field:
+        cores = {
+            "GK": "#FFA500", "CB": "#1E90FF", "LB": "#1E90FF", "RB": "#1E90FF",
+            "CM": "#32CD32", "LM": "#32CD32", "RM": "#32CD32",
+            "LW": "#DC143C", "RW": "#DC143C", "ST": "#DC143C"
+        }
+
         if formacao == "4-3-3":
             posicoes_formacao = [
                 ("GK", 90, 50), ("LB", 70, 15), ("CB", 70, 40), ("CB", 70, 60), ("RB", 70, 85),
                 ("CM", 50, 25), ("CM", 50, 50), ("CM", 50, 75),
                 ("LW", 25, 20), ("ST", 20, 50), ("RW", 25, 80)
             ]
-        else:  # 4-4-2
+        else:
             posicoes_formacao = [
                 ("GK", 90, 50), ("LB", 70, 15), ("CB", 70, 40), ("CB", 70, 60), ("RB", 70, 85),
                 ("LM", 35, 20), ("CM", 50, 40), ("CM", 50, 60), ("RM", 35, 80),
@@ -198,6 +152,7 @@ if len(titulares) == 11 and len(reservas) <= 12 and df_time["preco"].sum() <= bu
 
         st.markdown(html_campo, unsafe_allow_html=True)
 
+    # --- Reservas ---
     with col_bench:
         st.markdown("### 🪑 Reservas")
         if reservas:
@@ -207,4 +162,4 @@ if len(titulares) == 11 and len(reservas) <= 12 and df_time["preco"].sum() <= bu
         else:
             st.info("Nenhum reserva selecionado.")
 else:
-    st.warning("⚠️ Selecione exatamente 11 titulares, até 12 reservas e respeite o limite de 170 moedas.")
+    st.warning("⚠️ Selecione exatamente 11 titulares, até 12 reservas e respeite o limite de 185 moedas.")
