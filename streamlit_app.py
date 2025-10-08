@@ -88,7 +88,7 @@ reservas = st.multiselect(
 # Mostrar custo do time + métricas
 # =====================
 df_time = df[df["Jogador"].isin(titulares + reservas)]
-budget = 185
+budget = 200
 
 if not df_time.empty:
     custo_titulares = df[df["Jogador"].isin(titulares)]["preco"].sum()
