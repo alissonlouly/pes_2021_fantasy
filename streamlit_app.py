@@ -28,7 +28,7 @@ st.markdown("""
 # =====================
 @st.cache_data
 def load_data():
-    df = pd.read_csv("base_precificada.csv", sep=",")
+    df = pd.read_csv("base_precificada_s2.csv", sep=",")
     return df
 
 df = load_data()
@@ -48,7 +48,7 @@ with col2:
         "💰 Faixa de preço",
         min_value=int(df["preco"].min()),
         max_value=int(df["preco"].max()),
-        value=(int(df["preco"].min()), 20)
+        value=(int(df["preco"].min()), 26)
     )
     nome_input = st.text_input("🔎 Buscar por nome (separar múltiplos por vírgula)")
 
@@ -73,6 +73,9 @@ st.dataframe(df_filtrado, use_container_width=True)
 # =====================
 formacao = st.radio("📐 Escolha a formação:", ["4-3-3", "4-4-2"])
 
+# Pergunta pelo orçamento individual
+budget = st.number_input("💵 Qual o orçamento do seu time?", min_value=0.0, value=200.0, step=10.0)
+
 titulares = st.multiselect(
     "Selecione 11 jogadores (titulares)",
     options=df["Jogador"].tolist(),
@@ -88,7 +91,6 @@ reservas = st.multiselect(
 # Mostrar custo do time + métricas
 # =====================
 df_time = df[df["Jogador"].isin(titulares + reservas)]
-budget = 200
 
 if not df_time.empty:
     custo_titulares = df[df["Jogador"].isin(titulares)]["preco"].sum()
@@ -162,4 +164,4 @@ if len(titulares) == 11 and len(reservas) <= 12 and df_time["preco"].sum() <= bu
         else:
             st.info("Nenhum reserva selecionado.")
 else:
-    st.warning("⚠️ Selecione exatamente 11 titulares, até 12 reservas e respeite o limite de 185 moedas.")
+    st.warning("⚠️ Selecione exatamente 11 titulares, até 12 reservas e respeite o limite do seu orçamento.")
