@@ -28,7 +28,7 @@ st.markdown("""
 # =====================
 @st.cache_data
 def load_data():
-    df = pd.read_csv("base_precificada_s2.csv", sep=",")
+    df = pd.read_csv("base_precificada_2026_s1.csv", sep=",")
     return df
 
 df = load_data()
@@ -48,7 +48,7 @@ with col2:
         "💰 Faixa de preço",
         min_value=int(df["preco"].min()),
         max_value=int(df["preco"].max()),
-        value=(int(df["preco"].min()), 26)
+        value=(int(df["preco"].min()), int(df["preco"].max())+1)
     )
     nome_input = st.text_input("🔎 Buscar por nome (separar múltiplos por vírgula)")
 
@@ -83,7 +83,7 @@ titulares = st.multiselect(
 )
 
 reservas = st.multiselect(
-    "Selecione até 12 jogadores (reservas)",
+    "Selecione 12 jogadores (reservas)",
     options=df["Jogador"].tolist()
 )
 
