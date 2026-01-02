@@ -65,7 +65,19 @@ if nome_input:
 df_filtrado = df_filtrado[(df_filtrado["preco"] >= preco_min) & (df_filtrado["preco"] <= preco_max)]
 df_filtrado = df_filtrado.drop(columns=["vel", "kicking", "destruction", "creation"], errors='ignore')
 
-st.subheader("📋 Jogadores disponíveis (filtrados)")
+df_filtrado = df_filtrado.rename(columns={
+    "preco": "Preço",
+    "pos": "Posição",
+    "overall": "Overall",
+    "rank": "Rank"
+})
+
+ordem_inicial = ["Jogador", "Preço", "Posição", "Overall", "Rank"]
+resto = [c for c in df_filtrado.columns if c not in ordem_inicial]
+
+df_filtrado = df_filtrado[ordem_inicial + resto]
+
+st.subheader("📋 Jogadores disponíveis")
 st.dataframe(df_filtrado, use_container_width=True)
 
 # =====================
@@ -164,4 +176,4 @@ if len(titulares) == 11 and len(reservas) <= 12 and df_time["preco"].sum() <= bu
         else:
             st.info("Nenhum reserva selecionado.")
 else:
-    st.warning("⚠️ Selecione exatamente 11 titulares, até 12 reservas e respeite o limite do seu orçamento.")
+    st.warning("⚠️ Selecione exatamente 11 titulares, e no mínimo 12 reservas e respeite o limite do seu orçamento.")
