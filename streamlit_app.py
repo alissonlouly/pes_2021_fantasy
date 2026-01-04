@@ -28,7 +28,7 @@ st.markdown("""
 # =====================
 @st.cache_data
 def load_data():
-    df = pd.read_csv("base_precificada_2026_s1.csv", sep=",")
+    df = pd.read_csv("base_precificada_2026_s1_v1.csv", sep=",")
     return df
 
 df = load_data()
@@ -40,15 +40,15 @@ st.title("⚽ PES 2021 Fantasy")
 col1, col2 = st.columns(2)
 
 with col1:
-    posicoes = st.multiselect("📍 Filtrar por posição", options=df["pos"].unique())
-    ranks = st.multiselect("⭐ Filtrar por rank", options=df["rank"].unique())
+    posicoes = st.multiselect("📍 Filtrar por posição", options=df["Posição"].unique())
+    ranks = st.multiselect("⭐ Filtrar por rank", options=df["Rank"].unique())
 
 with col2:
     preco_min, preco_max = st.slider(
         "💰 Faixa de preço",
-        min_value=int(df["preco"].min()),
-        max_value=int(df["preco"].max()),
-        value=(int(df["preco"].min()), int(df["preco"].max())+1)
+        min_value=int(df["Preço"].min()),
+        max_value=int(df["Preço"].max()),
+        value=(int(df["Preço"].min()), int(df["Preço"].max())+1)
     )
     nome_input = st.text_input("🔎 Buscar por nome (separar múltiplos por vírgula)")
 
@@ -62,15 +62,8 @@ if nome_input:
     mask = df_filtrado["Jogador"].apply(lambda x: any(nome.lower() in x.lower() for nome in nomes))
     df_filtrado = df_filtrado[mask]
 
-df_filtrado = df_filtrado[(df_filtrado["preco"] >= preco_min) & (df_filtrado["preco"] <= preco_max)]
-df_filtrado = df_filtrado.drop(columns=["vel", "kicking", "destruction", "creation"], errors='ignore')
+df_filtrado = df_filtrado[(df_filtrado["Preço"] >= preco_min) & (df_filtrado["Preço"] <= preco_max)]
 
-df_filtrado = df_filtrado.rename(columns={
-    "preco": "Preço",
-    "pos": "Posição",
-    "overall": "Overall",
-    "rank": "Rank"
-})
 
 ordem_inicial = ["Jogador", "Preço", "Posição", "Overall", "Rank"]
 resto = [c for c in df_filtrado.columns if c not in ordem_inicial]
@@ -78,7 +71,54 @@ resto = [c for c in df_filtrado.columns if c not in ordem_inicial]
 df_filtrado = df_filtrado[ordem_inicial + resto]
 
 st.subheader("📋 Jogadores disponíveis")
-st.dataframe(df_filtrado, use_container_width=True)
+
+# Dicionário com cores por grupo
+cores_colunas = {
+    'Offensive Awareness': '#990000',   # Escuro vermelho
+    'Finishing': '#990000',
+    'Kicking Power': '#990000',
+    
+    'Ball Control': '#008080',          # Escuro ciano/verde
+    'Dribbling': '#008080',
+    'Tight Possession': '#008080',
+    'Balance': '#008080',
+    
+    'Heading': '#000080',               # Azul escuro
+    'Jump': '#000080',
+    'Defensive Awarenes': '#000080',
+    'Ball Winning': '#000080',
+    'Aggression': '#000080',
+    
+    'Low Pass': '#556B2F',              # Verde oliva escuro
+    'Lofted Pass': '#556B2F',
+    'Place Kicking': '#556B2F',
+    'Curl': '#556B2F',
+    
+    'Speed': '#8B4513',                  # Marrom escuro para Physicality
+    'Acceleration': '#8B4513',
+    'Physical Contact': '#8B4513',
+    'Stamina': '#8B4513',
+    
+    'GK Awareness': '#4B0082',           # Roxo escuro
+    'GK Catching': '#4B0082',
+    'GK Clearing': '#4B0082',
+    'GK Reflexes': '#4B0082',
+    'GK Reach': '#4B0082',
+}
+
+# Função para aplicar cor às colunas
+def color_cols(col):
+    if col.name in cores_colunas:
+        return [f'background-color: {cores_colunas[col.name]}' for _ in col]
+    else:
+        return ['']*len(col)
+
+# Aplica o estilo
+styled_df = df_filtrado.style.apply(color_cols)
+
+# Mostra no Streamlit
+st.dataframe(styled_df, use_container_width=True, height=600 )
+
 
 # =====================
 # Seleção de time
