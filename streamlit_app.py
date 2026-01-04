@@ -74,7 +74,7 @@ st.subheader("📋 Jogadores disponíveis")
 
 # Dicionário com cores por grupo
 cores_colunas = {
-    'Offensive Awarenes': '#990000',   # Escuro vermelho
+    'Off. Awarenes': '#990000',   # Escuro vermelho
     'Finishing': '#990000',
     'Kicking Power': '#990000',
     
