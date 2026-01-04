@@ -115,9 +115,11 @@ def color_cols(col):
 
 # Aplica o estilo
 styled_df = df_filtrado.style.apply(color_cols)
+styled_df = styled_df.format({
+    'Preço': '{:.2f}'
+})
 
-# Mostra no Streamlit
-st.dataframe(styled_df, use_container_width=True, height=600 )
+st.dataframe(styled_df, use_container_width=True, height=600)
 
 
 # =====================
