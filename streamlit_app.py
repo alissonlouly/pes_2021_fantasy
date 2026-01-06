@@ -54,9 +54,9 @@ with col2:
 
 df_filtrado = df.copy()
 if posicoes:
-    df_filtrado = df_filtrado[df_filtrado["pos"].isin(posicoes)]
+    df_filtrado = df_filtrado[df_filtrado["Posição"].isin(posicoes)]
 if ranks:
-    df_filtrado = df_filtrado[df_filtrado["rank"].isin(ranks)]
+    df_filtrado = df_filtrado[df_filtrado["Rank"].isin(ranks)]
 if nome_input:
     nomes = [n.strip() for n in nome_input.split(",")]
     mask = df_filtrado["Jogador"].apply(lambda x: any(nome.lower() in x.lower() for nome in nomes))
@@ -147,12 +147,11 @@ reservas = st.multiselect(
 df_time = df[df["Jogador"].isin(titulares + reservas)]
 
 if not df_time.empty:
-    custo_titulares = df[df["Jogador"].isin(titulares)]["preco"].sum()
-    custo_reservas = df[df["Jogador"].isin(reservas)]["preco"].sum()
+    custo_titulares = df[df["Jogador"].isin(titulares)]["Preço"].sum()
+    custo_reservas = df[df["Jogador"].isin(reservas)]["Preço"].sum()
     custo_total = custo_titulares + custo_reservas
     saldo = budget - custo_total
-    overall_medio = df[df["Jogador"].isin(titulares)]["overall"].mean() if titulares else 0
-
+    overall_medio = df[df["Jogador"].isin(titulares)]["Overall"].mean() if titulares else 0
     col1, col2, col3 = st.columns(3)
     col1.markdown(f"<div class='big-number-card'>💵 Total gasto: {custo_total:.1f} moedas</div>", unsafe_allow_html=True)
     col2.markdown(f"<div class='big-number-card'>💸 Restante: {saldo:.1f}</div>", unsafe_allow_html=True)
@@ -171,7 +170,7 @@ if not df_time.empty:
 # =====================
 # Visualização em campo + reservas
 # =====================
-if len(titulares) == 11 and len(reservas) <= 12 and df_time["preco"].sum() <= budget:
+if len(titulares) == 11 and len(reservas) <= 12 and df_time["Preço"].sum() <= budget:
     st.subheader("📊 Time em campo")
     col_field, col_bench = st.columns([2, 1])
 
@@ -200,7 +199,7 @@ if len(titulares) == 11 and len(reservas) <= 12 and df_time["preco"].sum() <= bu
         for i, (pos, top, left) in enumerate(posicoes_formacao):
             if i < len(titulares):
                 jogador = titulares[i]
-                overall = df.loc[df["Jogador"] == jogador, "overall"].values[0]
+                overall = df.loc[df["Jogador"] == jogador, "Overall"].values[0]
                 cor = cores.get(pos, "#32CD32")
                 jogador_text = f"{jogador}\n{overall:.0f}"
                 html_campo += f'<div class="jogador" style="top:{top}%; left:{left}%; background:{cor}; transform:translate(-50%, -50%);">{jogador_text}</div>'
@@ -212,7 +211,7 @@ if len(titulares) == 11 and len(reservas) <= 12 and df_time["preco"].sum() <= bu
     with col_bench:
         st.markdown("### 🪑 Reservas")
         if reservas:
-            df_reservas = df[df["Jogador"].isin(reservas)][["Jogador","pos","preco","overall"]]
+            df_reservas = df[df["Jogador"].isin(reservas)][["Jogador","Posição","Preço","Overall"]]
             st.dataframe(df_reservas, use_container_width=True)
             st.write(f"💰 **Custo dos reservas:** {custo_reservas:.1f} moedas")
         else:
