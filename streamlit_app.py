@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 import io
+import unicodedata
 
 # =====================
 # Configuração da página
@@ -28,8 +29,32 @@ st.markdown("""
 # =====================
 @st.cache_data
 def load_data():
-    df = pd.read_csv("base_precificada_2026_s1_v1.csv", sep=",")
+    # Tenta encodings comuns para preservar acentos em diferentes origens de CSV.
+    for encoding in ["utf-8-sig", "utf-8", "cp1252", "latin-1"]:
+        try:
+            df = pd.read_csv("base_precificada_s3.csv", sep=",", encoding=encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    else:
+        df = pd.read_csv("base_precificada_s3.csv", sep=",")
+
+    # Normaliza tipos para evitar exibição de inteiros como 94.0
+    df["Preço"] = pd.to_numeric(df["Preço"], errors="coerce")
+    df["Overall"] = pd.to_numeric(df["Overall"], errors="coerce").round().astype("Int64")
+
     return df
+
+
+def normalize_text(text):
+    if pd.isna(text):
+        return ""
+    text = str(text).strip().lower()
+    return "".join(
+        c for c in unicodedata.normalize("NFD", text)
+        if unicodedata.category(c) != "Mn"
+    )
+
 
 df = load_data()
 st.title("⚽ PES 2021 Fantasy")
@@ -59,7 +84,10 @@ if ranks:
     df_filtrado = df_filtrado[df_filtrado["Rank"].isin(ranks)]
 if nome_input:
     nomes = [n.strip() for n in nome_input.split(",")]
-    mask = df_filtrado["Jogador"].apply(lambda x: any(nome.lower() in x.lower() for nome in nomes))
+    nomes_normalizados = [normalize_text(n) for n in nomes if n.strip()]
+    mask = df_filtrado["Jogador"].apply(
+        lambda x: any(nome in normalize_text(x) for nome in nomes_normalizados)
+    )
     df_filtrado = df_filtrado[mask]
 
 df_filtrado = df_filtrado[(df_filtrado["Preço"] >= preco_min) & (df_filtrado["Preço"] <= preco_max)]
@@ -201,7 +229,7 @@ if len(titulares) == 11 and len(reservas) <= 12 and df_time["Preço"].sum() <= b
                 jogador = titulares[i]
                 overall = df.loc[df["Jogador"] == jogador, "Overall"].values[0]
                 cor = cores.get(pos, "#32CD32")
-                jogador_text = f"{jogador}\n{overall:.0f}"
+                jogador_text = f"{jogador}\n{int(overall)}"
                 html_campo += f'<div class="jogador" style="top:{top}%; left:{left}%; background:{cor}; transform:translate(-50%, -50%);">{jogador_text}</div>'
         html_campo += "</div>"
 
