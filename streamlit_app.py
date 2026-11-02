@@ -38,7 +38,7 @@ def load_data():
         except UnicodeDecodeError:
             continue
     else:
-        df = pd.read_csv("base_precificada_s4.csv", sep=",")
+        df = pd.read_csv("base_precificada_s5.csv", sep=",")
 
     # Normaliza tipos para evitar exibição de inteiros como 94.0
     df["Preço"] = pd.to_numeric(df["Preço"], errors="coerce")
