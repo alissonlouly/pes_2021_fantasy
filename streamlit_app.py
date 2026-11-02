@@ -33,7 +33,7 @@ def load_data():
     # Tenta encodings comuns para preservar acentos em diferentes origens de CSV.
     for encoding in ["utf-8-sig", "utf-8", "cp1252", "latin-1"]:
         try:
-            df = pd.read_csv("base_precificada_2026_s4.csv", sep=",", encoding=encoding)
+            df = pd.read_csv("base_precificada_2026_s5.csv", sep=",", encoding=encoding)
             break
         except UnicodeDecodeError:
             continue
